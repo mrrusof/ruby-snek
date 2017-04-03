@@ -229,6 +229,10 @@ end
 
 class KeyReader
 
+  UP = "\e[A"
+  LEFT = "\e[D"
+  RIGHT = "\e[C"
+
   attr_reader :key
 
   def initialize
@@ -266,7 +270,8 @@ end
 class Game
 
   TITLE = '..:: ~~ RubySnek ~~ ::..'
-  SLEEP = 0.0625
+  SLOW = 0.0625
+  FAST = 0.03125
 
   def setup
     init_screen
@@ -308,9 +313,9 @@ class Game
 
   def maybe_turn
     case @kbd.key
-    when "\e[D"
+    when KeyReader::LEFT
       @s.turn :left
-    when "\e[C"
+    when KeyReader::RIGHT
       @s.turn :right
     end
   end
@@ -327,17 +332,31 @@ class Game
     show_message 'You died.'
   end
 
+  def quit?
+    @kbd.key == 'q'
+  end
+
+  def go_fast?
+    @kbd.key == KeyReader::UP
+  end
+
   def play
     begin
       setup
+      timeout = SLOW
       while true
         @canvas.refresh
-        sleep SLEEP
+        sleep timeout
         if not @s.is_alive?
           die
           break
         end
-        break if @kbd.key == 'q'
+        break if quit?
+        if go_fast?
+          timeout = FAST
+        else
+          timeout = SLOW
+        end
         maybe_turn
         maybe_eat
         @f.draw
